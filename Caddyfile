@@ -1,0 +1,5 @@
+localhost {
+    root * ./pkg
+    file_server browse
+    encode zstd gzip
+}
