@@ -14,8 +14,22 @@
   let proxies: Proxy[] = $state([]);
   const getProxies = async () => {
     const response = await fetch(`${API_URL}/proxies`);
+    if (!response.ok) {
+      console.error("Failed to fetch proxies");
+      return;
+    }
     const data = await response.json();
     proxies = data;
+  };
+  let containerProxies: Proxy[] = $state([]);
+  const getContainerProxies = async () => {
+    const response = await fetch(`${API_URL}/container-proxies`);
+    if (!response.ok) {
+      console.error("Failed to fetch container proxies");
+      return;
+    }
+    const data = await response.json();
+    containerProxies = data;
   };
 
   let match = $state("");
@@ -34,9 +48,11 @@
     key = localStorage.getItem("key") || "";
 
     getProxies();
+    getContainerProxies();
 
     const interval = setInterval(() => {
       getProxies();
+      getContainerProxies();
     }, 5000);
 
     mounted = true;
@@ -88,9 +104,9 @@
     </button>
   </div>
   <div
-    class="grid grid-cols-[auto_min-content_auto_min-content] justify-around gap-y-2"
+    class="grid grid-cols-[auto_min-content_auto_min-content] justify-between gap-y-2"
   >
-    {#each proxies as proxy}
+    {#each proxies.filter((proxy) => !containerProxies.some((cp) => cp.match === proxy.match)) as proxy}
       <a href="https://{proxy.match}" target="_blank" class="hover:underline">
         {proxy.match}
       </a>
@@ -113,5 +129,33 @@
         </button>
       </div>
     {/each}
+    {#if containerProxies.length > 0}
+      <span class="col-span-full h-px bg-gray-100"></span>
+      {#each containerProxies as proxy}
+        <a href="https://{proxy.match}" target="_blank" class="hover:underline">
+          {proxy.match}
+        </a>
+        <span> &rarr; </span>
+        <span>
+          {proxy.upstream}
+        </span>
+        <div class="flex gap-2">
+          <button
+            class="disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled
+            onclick={() => {
+              fetch(`${API_URL}/proxies/${proxy.id}`, {
+                method: "DELETE",
+                headers: {
+                  "X-Key": key,
+                },
+              }).then(getProxies);
+            }}
+          >
+            🗑️
+          </button>
+        </div>
+      {/each}
+    {/if}
   </div>
 </div>
