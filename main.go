@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -39,7 +40,8 @@ func main() {
 
 	var labelManager *podman.LabelManager
 	if *Podman {
-		labelManager, err = podman.NewLabelManager(context.Background(), "unix:///run/user/1000/podman/podman.sock", *Domain)
+		uid := os.Getuid()
+		labelManager, err = podman.NewLabelManager(context.Background(), fmt.Sprintf("unix:///run/user/%d/podman/podman.sock", uid), *Domain)
 		if err != nil {
 			slog.Error("Failed to initialize Podman label manager", "error", err)
 			return
